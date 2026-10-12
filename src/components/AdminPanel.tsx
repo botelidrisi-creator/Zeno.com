@@ -12,9 +12,11 @@ import {
   Instagram, 
   Send, 
   Upload, 
+  Download,
   LogOut,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  FileJson
 } from 'lucide-react';
 import { Post, SiteSettings } from '../types';
 
@@ -137,6 +139,57 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
     setSuccessMessage('Social links updated everywhere on Zeno.com!');
     setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const backupFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportBackup = () => {
+    const backupData = {
+      siteName: 'Zeno.com',
+      exportDate: new Date().toISOString(),
+      settings: {
+        youtubeUrl,
+        instagramUrl,
+        telegramUrl,
+      },
+      posts,
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zeno-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (Array.isArray(parsed.posts)) {
+          parsed.posts.forEach((p: Post) => {
+            if (!posts.some((existing) => existing.id === p.id)) {
+              onAddPost(p);
+            }
+          });
+        }
+        if (parsed.settings) {
+          setYoutubeUrl(parsed.settings.youtubeUrl || '');
+          setInstagramUrl(parsed.settings.instagramUrl || '');
+          setTelegramUrl(parsed.settings.telegramUrl || '');
+          onSaveSettings({ ...settings, ...parsed.settings });
+        }
+        setSuccessMessage('Backup data successfully imported!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (err) {
+        alert('Invalid backup JSON file.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -449,6 +502,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <Check className="w-4 h-4" />
                     <span>SAVE LINKS GLOBALLY</span>
                   </button>
+
+                  {/* Backup & Restore (Great for GitHub Pages / Cross-device portability) */}
+                  <div className="pt-4 border-t border-slate-200 dark:border-blue-900/40 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <FileJson className="w-4 h-4 text-blue-400" />
+                      <h4 className="font-extrabold text-slate-800 dark:text-slate-200">
+                        Backup & Data Portability (JSON)
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Export your posts & settings to a JSON file to transfer between devices or save backups when hosted statically (e.g. on GitHub Pages).
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleExportBackup}
+                        className="btn-3d-white py-2.5 px-3 rounded-xl text-slate-800 dark:text-slate-200 font-bold flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Export Backup</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => backupFileInputRef.current?.click()}
+                        className="btn-3d-white py-2.5 px-3 rounded-xl text-slate-800 dark:text-slate-200 font-bold flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Import Backup</span>
+                      </button>
+                      <input
+                        ref={backupFileInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        onChange={handleImportBackup}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
                 </form>
               )}
 

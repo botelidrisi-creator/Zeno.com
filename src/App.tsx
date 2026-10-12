@@ -73,11 +73,15 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [staticPage, setStaticPage] = useState<'about' | 'contact' | 'privacy' | 'disclaimer' | null>(null);
 
-  // Load posts and settings from database on mount
+  // Load posts and settings from database on mount (with static host support)
   useEffect(() => {
     fetch('/api/posts')
       .then((res) => {
         if (!res.ok) throw new Error('API not available');
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Not JSON response (static host)');
+        }
         return res.json();
       })
       .then((data) => {
@@ -87,12 +91,17 @@ export default function App() {
         }
       })
       .catch((err) => {
-        console.log('Using local storage fallback for posts:', err.message);
+        // Normal and expected on GitHub Pages / static hosting: uses localStorage database
+        console.log('Using local storage database:', err.message);
       });
 
     fetch('/api/settings')
       .then((res) => {
         if (!res.ok) throw new Error('API not available');
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Not JSON response (static host)');
+        }
         return res.json();
       })
       .then((data) => {
@@ -102,7 +111,7 @@ export default function App() {
         }
       })
       .catch((err) => {
-        console.log('Using local storage fallback for settings:', err.message);
+        console.log('Using local storage settings:', err.message);
       });
   }, []);
 
