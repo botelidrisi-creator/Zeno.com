@@ -300,6 +300,7 @@ export default function App() {
         settings={settings}
         isAdminLoggedIn={isAdminLoggedIn}
         onAdminLogout={handleAdminLogout}
+        onSaveSettings={handleSaveSettings}
       />
 
       {/* SEARCH MODAL */}

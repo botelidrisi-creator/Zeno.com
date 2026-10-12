@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Check, Image as ImageIcon } from 'lucide-react';
 import { Post } from '../types';
 
@@ -15,16 +15,27 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   post,
   onSave,
 }) => {
-  if (!isOpen || !post) return null;
-
-  const [title, setTitle] = useState(post.title);
-  const [appLink, setAppLink] = useState(post.appLink);
-  const [appCode, setAppCode] = useState(post.appCode || '');
-  const [imageUrl, setImageUrl] = useState(post.imageUrl);
-  const [snippet, setSnippet] = useState(post.snippet);
-  const [imagePreview, setImagePreview] = useState(post.imageUrl);
+  const [title, setTitle] = useState(post?.title || '');
+  const [appLink, setAppLink] = useState(post?.appLink || '');
+  const [appCode, setAppCode] = useState(post?.appCode || '');
+  const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
+  const [snippet, setSnippet] = useState(post?.snippet || '');
+  const [imagePreview, setImagePreview] = useState(post?.imageUrl || '');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (post) {
+      setTitle(post.title || '');
+      setAppLink(post.appLink || '');
+      setAppCode(post.appCode || '');
+      setImageUrl(post.imageUrl || '');
+      setSnippet(post.snippet || '');
+      setImagePreview(post.imageUrl || '');
+    }
+  }, [post]);
+
+  if (!isOpen || !post) return null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -63,6 +63,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [successMessage, setSuccessMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   // Settings state
   const [youtubeUrl, setYoutubeUrl] = useState(settings.youtubeUrl || '');
@@ -140,8 +141,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setSuccessMessage('Social links updated everywhere on Zeno.com!');
     setTimeout(() => setSuccessMessage(''), 3000);
   };
-
-  const backupFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportBackup = () => {
     const backupData = {

@@ -132,9 +132,12 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Copyright */}
-        <div className="pt-4 border-t border-slate-100 dark:border-blue-900/30 text-center">
+        <div className="pt-4 border-t border-slate-100 dark:border-blue-900/30 text-center space-y-1">
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             © 2026 <strong>Zeno.com</strong>. All rights reserved.
+          </p>
+          <p className="text-[11px] text-slate-500">
+            Contact: <a href="mailto:animeanime9683@gmail.com" className="text-blue-500 hover:underline font-mono">animeanime9683@gmail.com</a>
           </p>
         </div>
 

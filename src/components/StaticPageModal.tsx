@@ -25,7 +25,7 @@ export const StaticPageModal: React.FC<StaticPageModalProps> = ({
             Welcome to <strong>Zeno.com</strong>, your mobile-first resource dedicated to online earning application reviews, redeem codes, job vacancies, and health tips.
           </p>
           <p>
-            At <strong>Zeno.com</strong>, we share helpful guides, direct application download links, and referral bonuses.
+            At <strong>Zeno.com</strong>, we share helpful guides, direct application download links, and referral bonuses. For questions or suggestions, write to us at <a href="mailto:animeanime9683@gmail.com" className="text-blue-500 hover:underline font-mono">animeanime9683@gmail.com</a>.
           </p>
           <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200">
             <strong>Key Features:</strong>
@@ -49,7 +49,12 @@ export const StaticPageModal: React.FC<StaticPageModalProps> = ({
           <div className="space-y-2.5">
             <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
               <span className="text-[11px] font-bold text-slate-400 block uppercase">Contact Email</span>
-              <span className="font-semibold text-slate-900 dark:text-white font-mono">contact@zeno.com</span>
+              <a 
+                href="mailto:animeanime9683@gmail.com"
+                className="font-semibold text-blue-500 hover:underline dark:text-blue-400 font-mono block mt-0.5 break-all transition-colors"
+              >
+                animeanime9683@gmail.com
+              </a>
             </div>
             {(settings.youtubeUrl || settings.instagramUrl || settings.telegramUrl) && (
               <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -81,7 +86,7 @@ export const StaticPageModal: React.FC<StaticPageModalProps> = ({
           </p>
           <h4 className="font-bold text-slate-900 dark:text-white">Information Handling</h4>
           <p>
-            <strong>Zeno.com</strong> does not collect personal sensitive information. User preferences like theme mode and language are saved locally on your device for a smooth experience.
+            <strong>Zeno.com</strong> does not collect personal sensitive information. User preferences like theme mode and language are saved locally on your device for a smooth experience. If you have any inquiries regarding privacy, please contact us at <a href="mailto:animeanime9683@gmail.com" className="text-blue-500 hover:underline font-mono">animeanime9683@gmail.com</a>.
           </p>
         </div>
       ),
@@ -95,7 +100,7 @@ export const StaticPageModal: React.FC<StaticPageModalProps> = ({
             All information on <strong>Zeno.com</strong> is published for informational and educational purposes.
           </p>
           <p>
-            Third-party applications and offers may change their terms or rewards at any time. Please review terms on their respective platforms before downloading or registering.
+            Third-party applications and offers may change their terms or rewards at any time. Please review terms on their respective platforms before downloading or registering. If you have any questions, write to us at <a href="mailto:animeanime9683@gmail.com" className="text-blue-500 hover:underline font-mono">animeanime9683@gmail.com</a>.
           </p>
         </div>
       ),
