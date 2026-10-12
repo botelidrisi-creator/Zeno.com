@@ -15,27 +15,43 @@ import { INITIAL_POSTS, INITIAL_SETTINGS } from './data/initialPosts';
 import { Post, SiteSettings } from './types';
 import { RotateCw, Sparkles, Inbox } from 'lucide-react';
 
+const safeGetItem = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const safeSetItem = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Quota or incognito error ignored
+  }
+};
+
 export default function App() {
   // Theme state: defaults to dark mode (navy)
   const [darkMode, setDarkMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem('zeno_dark_mode');
+    const saved = safeGetItem('zeno_dark_mode');
     if (saved !== null) return saved === 'true';
     return true; // Default to dark navy look
   });
 
   // Language state
   const [language, setLanguage] = useState<'all' | 'hi' | 'en'>(() => {
-    return (localStorage.getItem('zeno_language') as 'all' | 'hi' | 'en') || 'en';
+    return (safeGetItem('zeno_language') as 'all' | 'hi' | 'en') || 'en';
   });
 
   // Admin login state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('zeno_admin_logged_in') === 'true';
+    return safeGetItem('zeno_admin_logged_in') === 'true';
   });
 
   // Settings state (starts with empty links until set by user)
   const [settings, setSettings] = useState<SiteSettings>(() => {
-    const saved = localStorage.getItem('zeno_settings_v2');
+    const saved = safeGetItem('zeno_settings_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -48,7 +64,7 @@ export default function App() {
 
   // Posts state (starts completely EMPTY!)
   const [posts, setPosts] = useState<Post[]>(() => {
-    const saved = localStorage.getItem('zeno_posts_v2');
+    const saved = safeGetItem('zeno_posts_v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -87,7 +103,7 @@ export default function App() {
       .then((data) => {
         if (Array.isArray(data)) {
           setPosts(data);
-          localStorage.setItem('zeno_posts_v2', JSON.stringify(data));
+          safeSetItem('zeno_posts_v2', JSON.stringify(data));
         }
       })
       .catch((err) => {
@@ -107,7 +123,7 @@ export default function App() {
       .then((data) => {
         if (data && typeof data === 'object') {
           setSettings((prev) => ({ ...prev, ...data }));
-          localStorage.setItem('zeno_settings_v2', JSON.stringify(data));
+          safeSetItem('zeno_settings_v2', JSON.stringify(data));
         }
       })
       .catch((err) => {
@@ -122,27 +138,27 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('zeno_dark_mode', String(darkMode));
+    safeSetItem('zeno_dark_mode', String(darkMode));
   }, [darkMode]);
 
   // Sync language
   useEffect(() => {
-    localStorage.setItem('zeno_language', language);
+    safeSetItem('zeno_language', language);
   }, [language]);
 
   // Sync settings
   useEffect(() => {
-    localStorage.setItem('zeno_settings_v2', JSON.stringify(settings));
+    safeSetItem('zeno_settings_v2', JSON.stringify(settings));
   }, [settings]);
 
   // Sync posts
   useEffect(() => {
-    localStorage.setItem('zeno_posts_v2', JSON.stringify(posts));
+    safeSetItem('zeno_posts_v2', JSON.stringify(posts));
   }, [posts]);
 
   // Sync admin auth
   useEffect(() => {
-    localStorage.setItem('zeno_admin_logged_in', String(isAdminLoggedIn));
+    safeSetItem('zeno_admin_logged_in', String(isAdminLoggedIn));
   }, [isAdminLoggedIn]);
 
   // Page title sync
