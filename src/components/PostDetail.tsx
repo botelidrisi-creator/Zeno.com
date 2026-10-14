@@ -10,7 +10,9 @@ import {
   ExternalLink,
   Edit3,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Post, SiteSettings } from '../types';
 
@@ -18,25 +20,46 @@ interface PostDetailProps {
   post: Post;
   onBack: () => void;
   settings: SiteSettings;
+  isAdmin?: boolean;
   isAdminLoggedIn?: boolean;
   onEditPost?: (post: Post) => void;
-  onDeletePost?: (id: string) => void;
+  onDeletePost?: (id: string) => Promise<void> | void;
 }
 
 export const PostDetail: React.FC<PostDetailProps> = ({
   post,
   onBack,
   settings,
+  isAdmin,
   isAdminLoggedIn,
   onEditPost,
   onDeletePost,
 }) => {
+  const isUserAdmin = Boolean(isAdmin ?? isAdminLoggedIn);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedPage, setCopiedPage] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [post]);
+
+  if (post.status === 'draft' && !isUserAdmin) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center space-y-4">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white">This app is not published yet</h3>
+        <p className="text-xs text-slate-500">Only authorized administrators can preview draft apps.</p>
+        <button
+          onClick={onBack}
+          className="btn-3d-blue px-4 py-2 rounded-xl text-white font-bold text-xs"
+        >
+          Back to Feed
+        </button>
+      </div>
+    );
+  }
 
   const handleCopyCode = () => {
     if (!post.appCode) return;
@@ -74,26 +97,67 @@ export const PostDetail: React.FC<PostDetailProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          {isAdminLoggedIn && (
+          {isUserAdmin && (
             <>
               <button
                 onClick={() => onEditPost?.(post)}
-                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95"
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit</span>
               </button>
-              <button
-                onClick={() => {
-                  if (confirm('Are you sure you want to delete this post?')) {
-                    onDeletePost?.(post.id);
-                  }
-                }}
-                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
+
+              {confirmingDelete ? (
+                <div className="flex items-center gap-1 bg-black/80 dark:bg-slate-900/90 p-1 rounded-xl border border-red-500/50 shadow-md animate-in fade-in">
+                  <button
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      setDeleteError(null);
+                      try {
+                        if (onDeletePost) {
+                          await onDeletePost(post.id);
+                        }
+                        setConfirmingDelete(false);
+                        onBack();
+                      } catch (err: any) {
+                        const code = err?.code || err?.name || '';
+                        const msg = err?.message || String(err);
+                        console.error('Delete failed in PostDetail:', { code, message: msg, err });
+                        setDeleteError(code ? `[${code}] ${msg}` : msg);
+                      } finally {
+                        setIsDeleting(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                    className="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isDeleting ? 'Deleting...' : 'Confirm'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmingDelete(false);
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting}
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold active:scale-95 transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              )}
             </>
           )}
 
@@ -106,6 +170,25 @@ export const PostDetail: React.FC<PostDetailProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Delete Error Banner in PostDetail */}
+      {deleteError && (
+        <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-700 dark:text-red-300 text-xs flex items-start justify-between gap-2 shadow-sm animate-in fade-in">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Delete Failed</p>
+              <p className="font-mono text-[11px] mt-0.5 break-all">{deleteError}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setDeleteError(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold px-1 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Post Heading info */}
       <div className="space-y-2">

@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Check, AlertCircle, FileText, Globe } from 'lucide-react';
 import { Post } from '../types';
+import { compressImage } from '../utils/imageCompressor';
 
 interface EditPostModalProps {
   isOpen: boolean;
   onClose: () => void;
   post: Post | null;
-  onSave: (updatedPost: Post) => void;
+  onSave: (updatedPost: Post) => Promise<void> | void;
 }
 
 export const EditPostModal: React.FC<EditPostModalProps> = ({
@@ -20,7 +21,10 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   const [appCode, setAppCode] = useState(post?.appCode || '');
   const [imageUrl, setImageUrl] = useState(post?.imageUrl || '');
   const [snippet, setSnippet] = useState(post?.snippet || '');
+  const [status, setStatus] = useState<'published' | 'draft'>(post?.status || 'published');
   const [imagePreview, setImagePreview] = useState(post?.imageUrl || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,41 +35,68 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
       setAppCode(post.appCode || '');
       setImageUrl(post.imageUrl || '');
       setSnippet(post.snippet || '');
+      setStatus(post.status || 'published');
       setImagePreview(post.imageUrl || '');
+      setErrorMessage('');
     }
   }, [post]);
 
   if (!isOpen || !post) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      setImageUrl(result);
-      setImagePreview(result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 800, 0.72);
+      setImageUrl(compressed);
+      setImagePreview(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImageUrl(result);
+        setImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !appLink.trim() || !imageUrl.trim()) {
-      alert('Please fill in Title, App Link, and upload/provide a photo.');
+    setErrorMessage('');
+
+    if (!title.trim() || !appLink.trim() || (!imageUrl.trim() && !imagePreview)) {
+      setErrorMessage('Please fill in Title, App Link, and upload or provide a photo.');
       return;
     }
 
-    onSave({
-      ...post,
-      title: title.trim(),
-      appLink: appLink.trim(),
-      appCode: appCode.trim() || undefined,
-      imageUrl: imageUrl.trim(),
-      snippet: snippet.trim() || post.snippet,
-    });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onSave({
+        ...post,
+        title: title.trim(),
+        appLink: appLink.trim(),
+        appCode: appCode.trim() || undefined,
+        imageUrl: imageUrl.trim() || imagePreview,
+        snippet: snippet.trim() || post.snippet,
+        status,
+      });
+      onClose();
+    } catch (err: any) {
+      let msg = err.message || 'Failed to update app in database.';
+      try {
+        if (typeof msg === 'string' && msg.trim().startsWith('{')) {
+          const parsed = JSON.parse(msg);
+          if (parsed?.error) {
+            msg = parsed.error;
+          }
+        }
+      } catch {}
+      setErrorMessage(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -77,9 +108,14 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
 
       <div className="relative w-full max-w-lg bg-white dark:bg-[#0E1626] rounded-3xl shadow-2xl border border-slate-200 dark:border-blue-900/40 z-10 overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-blue-900/30 flex items-center justify-between bg-slate-50 dark:bg-[#111C2E]">
-          <h2 className="text-base font-black text-slate-900 dark:text-white">
-            Edit Post Details
-          </h2>
+          <div>
+            <h2 className="text-base font-black text-slate-900 dark:text-white">
+              Edit App Details
+            </h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Update app information and sync to Firebase Firestore
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center"
@@ -88,7 +124,54 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
           </button>
         </div>
 
+        {errorMessage && (
+          <div className="mx-4 mt-3 p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-300 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1 text-xs">
+          
+          {/* Status selector (Published vs Draft) */}
+          <div>
+            <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              App Visibility Status *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus('published')}
+                className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all ${
+                  status === 'published'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Published (Live)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('draft')}
+                className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-2 border transition-all ${
+                  status === 'draft'
+                    ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Save as Draft</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">
+              {status === 'published'
+                ? 'Visible on public feed across all devices.'
+                : 'Hidden from public visitors (only visible to admin).'}
+            </p>
+          </div>
+
           {/* Title */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -106,7 +189,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
           {/* App Link */}
           <div>
             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-              App Link *
+              App Link * (Download / AdFly Promotional URL)
             </label>
             <input
               type="url"
@@ -193,6 +276,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
           <div className="pt-2 flex gap-2">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={onClose}
               className="flex-1 py-3 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold"
             >
@@ -200,10 +284,11 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex-1 btn-3d-blue py-3 rounded-xl text-white font-black flex items-center justify-center gap-1.5"
+              disabled={isSubmitting}
+              className="flex-1 btn-3d-blue py-3 rounded-xl text-white font-black flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              <span>Save Changes</span>
+              <span>{isSubmitting ? 'Updating...' : 'Update in Firebase'}</span>
             </button>
           </div>
         </form>

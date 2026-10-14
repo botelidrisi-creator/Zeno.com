@@ -8,6 +8,7 @@ export interface Post {
   appLink: string;
   appCode?: string; // referral or redeem code (optional)
   views?: number;
+  status?: 'published' | 'draft';
 }
 
 export interface SiteSettings {
@@ -16,4 +17,7 @@ export interface SiteSettings {
   instagramUrl: string;
   telegramUrl: string;
   adminPassword?: string;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+  firebaseConfig?: string;
 }

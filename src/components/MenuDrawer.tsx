@@ -25,7 +25,8 @@ interface MenuDrawerProps {
   onOpenStaticPage: (page: 'about' | 'contact' | 'privacy' | 'disclaimer') => void;
   onOpenAdmin: () => void;
   settings: SiteSettings;
-  isAdminLoggedIn: boolean;
+  isAdmin?: boolean;
+  isAdminLoggedIn?: boolean;
   onAdminLogout: () => void;
   onSaveSettings?: (settings: SiteSettings) => void;
 }
@@ -37,10 +38,12 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   onOpenStaticPage,
   onOpenAdmin,
   settings,
+  isAdmin,
   isAdminLoggedIn,
   onAdminLogout,
   onSaveSettings,
 }) => {
+  const isAdminActive = Boolean(isAdmin ?? isAdminLoggedIn);
   // State for setting platform link popup (unconditional hook call at top)
   const [settingPlatform, setSettingPlatform] = useState<'youtube' | 'instagram' | 'telegram' | null>(null);
   const [linkInput, setLinkInput] = useState('');
@@ -72,9 +75,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     setSettingPlatform(null);
   };
 
-  const showYouTube = Boolean(settings.youtubeUrl) || isAdminLoggedIn;
-  const showInstagram = Boolean(settings.instagramUrl) || isAdminLoggedIn;
-  const showTelegram = Boolean(settings.telegramUrl) || isAdminLoggedIn;
+  const showYouTube = Boolean(settings.youtubeUrl) || isAdminActive;
+  const showInstagram = Boolean(settings.instagramUrl) || isAdminActive;
+  const showTelegram = Boolean(settings.telegramUrl) || isAdminActive;
   const hasVisibleSocial = showYouTube || showInstagram || showTelegram;
 
   const topRowHasBoth = showYouTube && showInstagram;
@@ -152,7 +155,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       <Youtube className="w-4 h-4 fill-white" />
                       <span>YouTube</span>
                     </a>
-                    {isAdminLoggedIn && (
+                    {isAdminActive && (
                       <button
                         onClick={(e) => handleOpenSetLink('youtube', e)}
                         title="Edit YouTube link"
@@ -163,7 +166,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     )}
                   </div>
                 ) : (
-                  isAdminLoggedIn && (
+                  isAdminActive && (
                     <button
                       onClick={(e) => handleOpenSetLink('youtube', e)}
                       className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 hover:border-red-500 transition-all cursor-pointer"
@@ -186,7 +189,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       <Instagram className="w-4 h-4" />
                       <span>Instagram</span>
                     </a>
-                    {isAdminLoggedIn && (
+                    {isAdminActive && (
                       <button
                         onClick={(e) => handleOpenSetLink('instagram', e)}
                         title="Edit Instagram link"
@@ -197,7 +200,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     )}
                   </div>
                 ) : (
-                  isAdminLoggedIn && (
+                  isAdminActive && (
                     <button
                       onClick={(e) => handleOpenSetLink('instagram', e)}
                       className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 hover:border-pink-500 transition-all cursor-pointer"
@@ -222,7 +225,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     <Send className="w-3.5 h-3.5" />
                     <span>Telegram Channel</span>
                   </a>
-                  {isAdminLoggedIn && (
+                  {isAdminActive && (
                     <button
                       onClick={(e) => handleOpenSetLink('telegram', e)}
                       title="Edit Telegram link"
@@ -233,7 +236,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   )}
                 </div>
               ) : (
-                isAdminLoggedIn && (
+                isAdminActive && (
                   <button
                     onClick={(e) => handleOpenSetLink('telegram', e)}
                     className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold border border-dashed border-slate-300 dark:border-slate-700 hover:border-sky-500 transition-all cursor-pointer"
@@ -296,27 +299,27 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
           {/* Footer in Drawer with Admin Button & Logout */}
           <div className="mt-auto p-4 border-t border-slate-100 dark:border-blue-900/30 bg-slate-50/70 dark:bg-[#0E1626]">
-            {isAdminLoggedIn ? (
-              <div className="space-y-2">
+            {isAdminActive ? (
+              <div className="space-y-2 mb-3">
                 <button
                   onClick={() => {
                     onOpenAdmin();
                     onClose();
                   }}
-                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+                  className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <Settings className="w-3.5 h-3.5" />
-                  <span>Admin Panel (Logged In)</span>
+                  <span>Admin Dashboard</span>
                 </button>
                 <button
                   onClick={() => {
                     onAdminLogout();
                     onClose();
                   }}
-                  className="w-full py-2 px-3 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-500 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full py-2 px-3 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-red-500 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Logout Admin</span>
+                  <span>Admin Logout</span>
                 </button>
               </div>
             ) : (
@@ -325,14 +328,14 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   onOpenAdmin();
                   onClose();
                 }}
-                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-blue-400 dark:border-blue-700/60 bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-300 hover:bg-blue-100/50 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-2 px-3 mb-2 rounded-xl text-slate-400 hover:text-blue-500 dark:text-slate-500 dark:hover:text-blue-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3 h-3" />
                 <span>Admin Login</span>
               </button>
             )}
 
-            <p className="mt-3 text-center text-[10px] text-slate-400 font-medium">
+            <p className="text-center text-[10px] text-slate-400 font-medium">
               © 2026 Zeno.com. All rights reserved.
             </p>
           </div>

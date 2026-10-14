@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'animeanime9683@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['id', 'title', 'author', 'date', 'imageUrl', 'appLink', 'snippet', 'status'])
+        && data.id is string && data.id.size() <= 128
+        && data.title is string && data.title.size() <= 1000
+        && data.author is string && data.author.size() <= 200
+        && data.date is string && data.date.size() <= 100
+        && data.imageUrl is string && data.imageUrl.size() <= 1000000
+        && data.appLink is string && data.appLink.size() <= 4096
+        && data.snippet is string && data.snippet.size() <= 10000
+        && (data.status == 'published' || data.status == 'draft')
+        && (!('views' in data) || data.views is number)
+        && (!('appCode' in data) || (data.appCode is string && data.appCode.size() <= 256));
+    }
+
+    function isValidSetting(data) {
+      return (!('siteName' in data) || (data.siteName is string && data.siteName.size() <= 100))
+        && (!('youtubeUrl' in data) || (data.youtubeUrl is string && data.youtubeUrl.size() <= 2048))
+        && (!('instagramUrl' in data) || (data.instagramUrl is string && data.instagramUrl.size() <= 2048))
+        && (!('telegramUrl' in data) || (data.telegramUrl is string && data.telegramUrl.size() <= 2048));
+    }
+
+    // App reviews and posts collection
+    match /posts/{postId} {
+      allow get: if isValidId(postId) && (resource.data.status == 'published' || isAdmin());
+      allow list: if (resource.data.status == 'published') || isAdmin();
+      allow create: if isValidId(postId) && isAdmin() && isValidPost(incoming());
+      allow update: if isValidId(postId) && isAdmin() && isValidPost(incoming());
+      allow delete: if isValidId(postId) && isAdmin();
+    }
+
+    // Site settings collection (social links, site metadata)
+    match /settings/{settingId} {
+      allow get, list: if isValidId(settingId);
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidSetting(incoming());
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+
+    // Admin accounts collection
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isSignedIn() && (
+        isAdmin() ||
+        (request.auth.uid == adminUid && request.auth.token.email == 'animeanime9683@gmail.com')
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "Post": {
+      "title": "Post",
+      "description": "App review post, gift card, or job update",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "author": { "type": "string", "maxLength": 100 },
+        "date": { "type": "string", "maxLength": 50 },
+        "imageUrl": { "type": "string", "maxLength": 500000 },
+        "appLink": { "type": "string", "maxLength": 2048 },
+        "appCode": { "type": "string", "maxLength": 100 },
+        "snippet": { "type": "string", "maxLength": 2000 },
+        "views": { "type": "number" },
+        "status": { "type": "string", "enum": ["published", "draft"] }
+      },
+      "required": ["id", "title", "author", "date", "imageUrl", "appLink", "snippet", "status"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Public site configuration including social links",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string", "maxLength": 100 },
+        "youtubeUrl": { "type": "string", "maxLength": 2048 },
+        "instagramUrl": { "type": "string", "maxLength": 2048 },
+        "telegramUrl": { "type": "string", "maxLength": 2048 }
+      }
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator record",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["admin"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Collection of all app posts and reviews"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Site settings including social links"
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Authorized admin accounts allowed to write and manage apps"
+    }
+  }
+}

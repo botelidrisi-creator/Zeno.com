@@ -6,13 +6,18 @@ interface FooterProps {
   settings: SiteSettings;
   onOpenStaticPage: (page: 'about' | 'contact' | 'privacy' | 'disclaimer') => void;
   onOpenAdmin: () => void;
+  isAdmin?: boolean;
+  isAdminLoggedIn?: boolean;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   settings,
   onOpenStaticPage,
   onOpenAdmin,
+  isAdmin,
+  isAdminLoggedIn,
 }) => {
+  const isUserAdmin = Boolean(isAdmin ?? isAdminLoggedIn);
   return (
     <footer className="mt-12 bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-blue-900/40 transition-colors">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -45,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Youtube className="w-4 h-4 fill-current" />
               </a>
-            ) : (
+            ) : isUserAdmin ? (
               <button
                 onClick={onOpenAdmin}
                 title="Configure YouTube Link"
@@ -53,7 +58,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Youtube className="w-4 h-4" />
               </button>
-            )}
+            ) : null}
 
             {settings.instagramUrl ? (
               <a
@@ -65,7 +70,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Instagram className="w-4 h-4" />
               </a>
-            ) : (
+            ) : isUserAdmin ? (
               <button
                 onClick={onOpenAdmin}
                 title="Configure Instagram Link"
@@ -73,7 +78,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Instagram className="w-4 h-4" />
               </button>
-            )}
+            ) : null}
 
             {settings.telegramUrl ? (
               <a
@@ -85,7 +90,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Send className="w-4 h-4" />
               </a>
-            ) : (
+            ) : isUserAdmin ? (
               <button
                 onClick={onOpenAdmin}
                 title="Configure Telegram Link"
@@ -93,7 +98,7 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 <Send className="w-4 h-4" />
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -123,12 +128,14 @@ export const Footer: React.FC<FooterProps> = ({
           >
             Disclaimer
           </button>
-          <button
-            onClick={onOpenAdmin}
-            className="text-blue-500 font-bold hover:underline transition-colors"
-          >
-            Admin Panel
-          </button>
+          {isUserAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="text-blue-500 font-bold hover:underline transition-colors cursor-pointer"
+            >
+              Admin Panel
+            </button>
+          )}
         </div>
 
         {/* Copyright */}
